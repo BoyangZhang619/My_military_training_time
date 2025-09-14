@@ -1,36 +1,141 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Military Training Time</title>
+    <title>SZPUers's remaining time of military training</title>
+    <link rel="icon" href="./微信图片_20250914165331_56_100.png">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            list-style: none;
+        }
 
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        header {
+            text-align: center;
+            margin: 0 auto;
+            max-width: 90vw;
+            width: 1000px;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            max-width: 90vw;
+            width: 1000px;
+            margin: 0 auto;
+            overflow: scroll;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding-bottom: 10vh;
+        }
+
+        main div {
+            margin: 1vh 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 10px 0;
+            background-color: #ffffff;
+            color: black;
+            position: fixed;
+            bottom: 0;
+            box-shadow: #4a4a4a80 0px -2px 6px 0px;
+            width: 100vw;
+        }
+
+        progress {
+            max-width: 90vw;
+            width: 1000px;
+            height: 3.75vh;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: #dcdcdc;
+            border: none;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        progress::-webkit-progress-bar {
+            background-color: #dcdcdc;
+        }
+
+        progress::-webkit-progress-value {
+            background-color: #4a4a4a;
+        }
+
+        p {
+            margin-bottom: 1vh;
+            font-size: 2vh;
+        }
+
+        h1 {
+            font-size: 4vh;
+            margin: 2vh 0;
+        }
     </style>
 </head>
+
 <body>
     <header>
-        <h1>My Military Training Time</h1>
+        <h1>SZPUers' remaining time of military training</h1>
     </header>
+    <main id="content">
+        <!-- Content will be dynamically generated here -->
 
-    <nav aria-label="Main navigation">
-        <!-- Add navigation links here -->
-    </nav>
-
-    <main>
-        <section>
-            <h2>Welcome</h2>
-            <p>Get started by editing <code>index.html</code>.</p>
-        </section>
     </main>
 
     <footer>
-        <p>&copy; <span id="year"></span> My Military Training Time</p>
+        <div>
+            <p>十四日军训总体进度:(<span></span>/100)</p>
+            <progress max="100"></progress>
+        </div>
     </footer>
 
     <script>
-        // Set current year in footer
-        document.getElementById('year').textContent = new Date().getFullYear();
+        [startTime, endTime, curTime] = [1757260800000, 1758427200000, (new Date()).getTime()];
+        let spans = document.getElementsByTagName('span');
+        let progress = document.getElementsByTagName('progress');
+        let curIndex = 0;
+        for (let i = 0; i < 14; i++) {
+            _startTime = (new Date(startTime + i * 86400000)).getTime();
+            _endTime = (new Date(startTime + (i + 1) * 86400000)).getTime();
+            curIndex = _startTime <= curTime && curTime < _endTime ? i : curIndex;
+            document.getElementById('content').innerHTML += `<div>
+                <p><strong>|&nbsp;&nbsp;</strong>9月${8 + i}日军训进度:(<span>${curTime - startTime >= (i + 1) * 86400000 ? "100" : curTime <= _startTime ? "0" : ((curTime - (_startTime)) / 864000).toFixed(4)}</span>/100)</p>
+                <progress value="${curTime - startTime >= (i + 1) * 86400000 ? 100 : curTime <= _startTime ? 0 : (curTime - (_startTime)) / 864000}" max="100"></progress>
+            </div>`;
+        }
+        update(curIndex);
+        function update(index) {
+            _startTime = (new Date(startTime + index * 86400000)).getTime();
+            _endTime = (new Date(startTime + (index + 1) * 86400000)).getTime();
+            _curTime = (new Date()).getTime();
+            index += _startTime <= _curTime && _curTime < _endTime ? 0 : 1;
+            num = index == 13 ? 432000 : 864000;
+            document.getElementsByTagName('progress')[index].value = document.getElementsByTagName('span')[index].innerText = _endTime <= _curTime ? "100" : _curTime <= _startTime ? "0" : ((_curTime - _startTime) / num).toFixed(4);
+            document.getElementsByTagName('progress')[14].value = document.getElementsByTagName('span')[14].innerText = _curTime >= endTime ? "100" : _curTime <= startTime ? "0" : (((_curTime-startTime)/(endTime-startTime))*100).toFixed(4);
+            setTimeout(() => update(index), 100);
+        }
     </script>
 </body>
+
 </html>
