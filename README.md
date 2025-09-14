@@ -1,1 +1,1 @@
-# My_military_training_time
+# SZPUers'_remaining_time_of_military_training
