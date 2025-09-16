@@ -108,34 +108,61 @@
 
     <footer>
         <div>
-            <p>十四日军训总体进度:(<span></span>/100)</p>
+            <p>总<bold></bold>日军训总体进度:(<span></span>/100)</p>
             <progress max="100"></progress>
         </div>
     </footer>
 
     <script>
-        [startTime, endTime, curTime] = [1757260800000, 1758427200000, (new Date()).getTime()];
-        let spans = document.getElementsByTagName('span');
-        let progress = document.getElementsByTagName('progress');
+        let startDate = [2025, 8, 8]; // 军训开始时间,月份从0开始
+        let lastDay = 14;
+        let trainingTime = [[[6, 30], [7, 0]], [[8, 0], [11, 40]], [[15, 40], [17, 30]], [[19, 20], [21, 0]]];
+        let exclusionTimeOfSomedays = { "14": [3, 4] }; //这四行为可调整参数
+
+        [startTime, endTime, curTime] = [new Date(...startDate).getTime(), new Date(...startDate).getTime() + lastDay * 86400000, (new Date()).getTime()];
         let curIndex = 0;
-        for (let i = 0; i < 14; i++) {
-            _startTime = (new Date(startTime + i * 86400000)).getTime();
-            _endTime = (new Date(startTime + (i + 1) * 86400000)).getTime();
-            curIndex = _startTime <= curTime && curTime < _endTime ? i : curIndex;
+        let totalTime = trainingTime.map(item => (item[1][0] * 60 + item[1][1]) - (item[0][0] * 60 + item[0][1])).reduce((a, b) => a + b, 0) * 60000;
+        let totalTimeOfAllDays = totalTime * lastDay - (exclusionTimeOfSomedays ? Object.values(exclusionTimeOfSomedays).flat().reduce((a, b) => a + b, 0) * 60000 : 0);
+        alert(`该计时仅在trainingTime范围内时间内运算，且排除对应exclusionTimeOfSomedays在trainingTime对应的时间范围\nstartDate:${startDate}，月份从0开始计数，如9月为8.\nlastDay:${lastDay}\ntrainingTime:${JSON.stringify(trainingTime)}\nexclusionTimeOfSomedays:${JSON.stringify(exclusionTimeOfSomedays)}\n\n注:如果上述数据对不上,wx,邮箱或者去github发issue找我`);
+        document.getElementsByTagName('footer')[0].getElementsByTagName('bold')[0].innerText = lastDay;
+        console.log(totalTime);
+
+
+        for (let i = 0; i < lastDay; i++) {
+            [_startTime, _percentage, _month, _date] = [...update(i, true), new Date(_startTime).getMonth() + 1, new Date(_startTime).getDate()];
+            _percentage = _percentage == -1 ? update(i, true) : _percentage;
             document.getElementById('content').innerHTML += `<div>
-                <p><strong>|&nbsp;&nbsp;</strong>9月${8 + i}日军训进度:(<span>${curTime - startTime >= (i + 1) * 86400000 ? "100" : curTime <= _startTime ? "0" : ((curTime - (_startTime)) / 864000).toFixed(4)}</span>/100)</p>
-                <progress value="${curTime - startTime >= (i + 1) * 86400000 ? 100 : curTime <= _startTime ? 0 : (curTime - (_startTime)) / 864000}" max="100"></progress>
+                <p><strong>|&nbsp;&nbsp;</strong>${_month}月${_date}日军训进度:(<span>${_percentage}</span>/100)</p><progress value="${_percentage}" max="100"></progress>
             </div>`;
         }
         update(curIndex);
-        function update(index) {
-            _startTime = (new Date(startTime + index * 86400000)).getTime();
-            _endTime = (new Date(startTime + (index + 1) * 86400000)).getTime();
-            _curTime = (new Date()).getTime();
-            index += _startTime <= _curTime && _curTime < _endTime ? 0 : 1;
-            num = index == 13 ? 432000 : 864000;
-            document.getElementsByTagName('progress')[index].value = document.getElementsByTagName('span')[index].innerText = _endTime <= _curTime ? "100" : _curTime <= _startTime ? "0" : ((_curTime - _startTime) / num).toFixed(4);
-            document.getElementsByTagName('progress')[14].value = document.getElementsByTagName('span')[14].innerText = _curTime >= endTime ? "100" : _curTime <= startTime ? "0" : (((_curTime-startTime)/(endTime-startTime))*100).toFixed(4);
+        function update(index = (new Date().getTime() - startTime) % 86400000, init = false) {
+            [startIndex, endIndex] = [0, trainingTime.length - 1];
+            _abandon = exclusionTimeOfSomedays[(index + 1).toString()];
+            do {
+                if (_abandon) {
+                    if (_abandon.includes(startIndex)) { startIndex++; continue; }
+                    if (_abandon.includes(endIndex)) { endIndex--; continue; }
+                }
+                _startTime = startTime + index * 86400000 + (trainingTime[startIndex][0][0] * 60 + trainingTime[startIndex][0][1]) * 60000;
+                _endTime = startTime + index * 86400000 + (trainingTime[endIndex][1][0] * 60 + trainingTime[endIndex][1][1]) * 60000;
+                break;
+            } while (1);
+
+            curIndex = _startTime <= curTime && curTime < _endTime ? index : curIndex; //传递当前进度
+            curTime = (new Date()).getTime();
+            [_curNum, _curStartTime, _curEndTime] = [0, -1, -1];
+            for (let j = 0; j < trainingTime.length; j++) {
+                if (_abandon && _abandon.includes(j)) continue;
+                [_curStartPlus, _curEndPlus] = [0, 1].map(k => { return (trainingTime[j][k][0] * 60 + trainingTime[j][k][1]) * 60000; });
+                [_curStartTime, _curEndTime] = [_curStartPlus, _curEndPlus].map(k => { return startTime + index * 86400000 + k; });
+                _curNum += curTime <= _curStartTime ? 0 : curTime >= _curEndTime ? _curEndTime - _curStartTime : curTime - _curStartTime;
+                // console.log(_curNum, _curStartTime, _curEndTime, curTime, j)
+            }
+            _percentage = curTime <= _startTime ? 0 : curTime >= _endTime ? 100 : (_curNum / totalTime * 100).toFixed(4);
+            if (init) return [_startTime, _percentage];
+            document.getElementsByTagName('progress')[index].value = document.getElementsByTagName('span')[index].innerText = _percentage;
+            document.getElementsByTagName('progress')[14].value = document.getElementsByTagName('span')[14].innerText = index * totalTime + _curNum >= totalTimeOfAllDays ? 100 : ((index * totalTime + _curNum) / totalTimeOfAllDays * 100).toFixed(4);
             setTimeout(() => update(index), 100);
         }
     </script>
