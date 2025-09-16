@@ -136,7 +136,7 @@
             </div>`;
         }
         update(curIndex);
-        function update(index = (new Date().getTime() - startTime) % 86400000, init = false) {
+        function update(index = Math.floor((new Date().getTime() - startTime) / 86400000), init = false) {
             [startIndex, endIndex] = [0, trainingTime.length - 1];
             _abandon = exclusionTimeOfSomedays[(index + 1).toString()];
             do {
@@ -163,7 +163,7 @@
             if (init) return [_startTime, _percentage];
             document.getElementsByTagName('progress')[index].value = document.getElementsByTagName('span')[index].innerText = _percentage;
             document.getElementsByTagName('progress')[14].value = document.getElementsByTagName('span')[14].innerText = index * totalTime + _curNum >= totalTimeOfAllDays ? 100 : ((index * totalTime + _curNum) / totalTimeOfAllDays * 100).toFixed(4);
-            setTimeout(() => update(index), 100);
+            setTimeout(() => update(), 100);
         }
     </script>
 </body>
